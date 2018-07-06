@@ -1,3 +1,3 @@
-# 2048
+# 2048 GAME
 
-...2048 js experiments
+... js experiments with the game "2048"
