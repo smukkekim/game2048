@@ -75,6 +75,17 @@ export default class Gameboard {
     }
   }
 
+  cycleGridUntil(func, check) {
+    for (let i = 0; i < config.tilesPerRow; i++) {
+      for (let j = 0; j < config.tilesPerRow; j++) {
+        if (func.call(this, this.grid[i][j]) === check) {
+          return check;
+        }
+      }
+    }
+    return !check;
+  }
+
   getCellNeighbour(cell, direction) {
     let neighbour = null;
     switch (direction) {
@@ -135,6 +146,9 @@ export default class Gameboard {
       cell.value = 0;
 
       this.updateScore(this.score + neighbour.value);
+      if (neighbour.value === 2048) {
+        this.gameOver(true);
+      }
     }
   }
 
@@ -165,24 +179,35 @@ export default class Gameboard {
         this.cycleGrid(this.moveCell, direction);
         this.cycleGrid(this.mergeCell, direction);
         this.cycleGrid(this.moveCell, direction);
-        this.addNumber({ direction: direction });
+        if (this.hasMovesAvailable()) {
+          this.addNumber({ direction: direction });
+        }
       }
 
       if (isGameKey) {
         this.drawGrid();
       }
+
+      if (!this.hasMovesAvailable()) {
+        this.gameOver(false);
+        return;
+      }
     });
   }
 
-  gameOver(win) {
-    this.gameInProgress = false;
-    this.cycleGrid(cell => (cell.isPlayed = true));
-    this.drawGrid();
-    if (win) {
-      this.setMessage('HOORAY! You reached 2048!');
-    } else {
-      this.setMessage('BUMMER! You did not reach 2048 this time!');
+  hasMovesAvailable() {
+    if (this.emptyCells().length > 0) {
+      return true;
     }
+
+    let check = false;
+    return this.cycleGridUntil(c => {
+      const directions = Object.keys(DIRECTION);
+      directions.forEach(direction => {
+        let neighbour = this.getCellNeighbour(c, direction);
+        return neighbour && neighbour.value === c.value;
+      });
+    }, true);
   }
 
   draw() {
@@ -242,7 +267,6 @@ export default class Gameboard {
   addNumber(value, count = 1) {
     for (let i = 0; i < count; i++) {
       const available = this.emptyCells();
-      if (available.length === 0) return;
       const index = Math.floor(Math.random() * available.length);
       if (!isNaN(Number(value))) {
         available[index].value = value;
@@ -266,7 +290,7 @@ export default class Gameboard {
     this.setupGrid();
     this.addNumber(2, 2);
     this.draw();
-    this.setMessage('Get to 2048');
+    this.setMessage('Join number tiles and reach the <b>2048 tile</b>');
     this.startPlayerInteraction();
     this.gameInProgress = true;
   }
@@ -276,8 +300,17 @@ export default class Gameboard {
     this.clearCanvas();
     this.setupGrid();
     this.addNumber(2, 2);
-    this.setMessage('Get to 2048');
+    this.setMessage('Join number tiles and reach the <b>2048 tile</b>');
     this.drawGrid();
     this.gameInProgress = true;
+  }
+
+  gameOver(win) {
+    this.gameInProgress = false;
+    if (win) {
+      this.setMessage('HOORAY! You reached 2048!');
+    } else {
+      this.setMessage('BUMMER! You did not reach 2048 this time!');
+    }
   }
 }
