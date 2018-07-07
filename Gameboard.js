@@ -23,6 +23,13 @@ export default class Gameboard {
 
     this.message = '';
     this.cells = [];
+
+    this.score = 0;
+  }
+
+  reset() {
+    this.cells = [];
+    this.score = 0;
   }
 
   clearCanvas() {
@@ -126,6 +133,8 @@ export default class Gameboard {
     if (neighbour instanceof Cell && neighbour.value == cell.value) {
       neighbour.value += cell.value;
       cell.value = 0;
+
+      this.updateScore(this.score + neighbour.value);
     }
   }
 
@@ -135,32 +144,29 @@ export default class Gameboard {
       if (!this.gameInProgress) return;
 
       let isGameKey = true;
+      let direction;
       switch (evt.key) {
         case 'ArrowUp':
-          this.cycleGrid(this.moveCell, DIRECTION.up);
-          this.cycleGrid(this.mergeCell, DIRECTION.up);
-          this.cycleGrid(this.moveCell, DIRECTION.up);
+          direction = DIRECTION.up;
           break;
         case 'ArrowRight':
-          this.cycleGrid(this.moveCell, DIRECTION.right);
-          this.cycleGrid(this.mergeCell, DIRECTION.right);
-          this.cycleGrid(this.moveCell, DIRECTION.right);
-          break;
-        case 'ArrowLeft':
-          this.cycleGrid(this.moveCell, DIRECTION.left);
-          this.cycleGrid(this.mergeCell, DIRECTION.left);
-          this.cycleGrid(this.moveCell, DIRECTION.left);
+          direction = DIRECTION.right;
           break;
         case 'ArrowDown':
-          this.cycleGrid(this.moveCell, DIRECTION.down);
-          this.cycleGrid(this.mergeCell, DIRECTION.down);
-          this.cycleGrid(this.moveCell, DIRECTION.down);
+          direction = DIRECTION.down;
+          break;
+        case 'ArrowLeft':
+          direction = DIRECTION.left;
           break;
         default:
           isGameKey = false;
       }
-
-      this.addNumber();
+      if (direction) {
+        this.cycleGrid(this.moveCell, direction);
+        this.cycleGrid(this.mergeCell, direction);
+        this.cycleGrid(this.moveCell, direction);
+        this.addNumber({ direction: direction });
+      }
 
       if (isGameKey) {
         this.drawGrid();
@@ -181,6 +187,7 @@ export default class Gameboard {
 
   draw() {
     this.drawMessage();
+    this.drawScoreboard();
     var boardContainer = document.createElement('div');
     boardContainer.classList.add('board-container');
     boardContainer.appendChild(this.canvas);
@@ -196,6 +203,22 @@ export default class Gameboard {
     messageDisplay.classList.add('message');
     messageDisplay.innerHTML = this.message;
     document.querySelector('body').appendChild(messageDisplay);
+  }
+
+  drawScoreboard() {
+    const scoreBoard = document.createElement('div');
+    scoreBoard.classList.add('score-board');
+    this.scoreDisplay = document.createElement('span');
+    this.scoreDisplay.classList.add('score-display');
+    this.scoreDisplay.textContent = this.score.toString();
+    scoreBoard.innerHTML = '<span class="label">Score:</span> ';
+    scoreBoard.appendChild(this.scoreDisplay);
+    document.querySelector('body').appendChild(scoreBoard);
+  }
+
+  updateScore(newScore) {
+    this.score = newScore;
+    this.scoreDisplay.textContent = newScore.toString();
   }
 
   drawToolbox() {
@@ -249,9 +272,11 @@ export default class Gameboard {
   }
 
   restartGame() {
+    this.reset();
     this.clearCanvas();
-    this.setMessage('Get to 2048');
     this.setupGrid();
+    this.addNumber(2, 2);
+    this.setMessage('Get to 2048');
     this.drawGrid();
     this.gameInProgress = true;
   }
