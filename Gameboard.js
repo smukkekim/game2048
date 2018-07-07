@@ -11,14 +11,10 @@ const DIRECTION = {
 export default class Gameboard {
   constructor(width, height, cellCount) {
     this.gameInProgress = false;
-    this.bgColor = config.bgColor;
-    this.width = width;
-    this.height = height;
-    this.cellCount = cellCount;
 
     this.canvas = document.createElement('canvas');
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+    this.canvas.width = config.size;
+    this.canvas.height = config.size;
     let id = 1;
     while (document.getElementById('canvas' + id) !== null) id++;
     this.canvas.id = id + '';
@@ -30,20 +26,19 @@ export default class Gameboard {
   }
 
   clearCanvas() {
-    this.context.fillStyle = this.bgColor;
-    this.context.fillRect(0, 0, this.width, this.height);
+    this.context.fillStyle = config.bgColor;
+    this.context.fillRect(0, 0, config.size, config.size);
   }
 
   setupGrid() {
-    this.cols = this.cellCount;
-    this.rows = this.cellCount;
-    this.cellSize = this.width / this.cellCount;
+    this.cols = config.tilesPerRow;
+    this.rows = config.tilesPerRow;
 
     this.grid = new Array(this.cols);
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
       for (let j = 0; j < this.rows; j++) {
-        this.cells.push((this.grid[i][j] = new Cell(i, j, this.cellSize, 0)));
+        this.cells.push((this.grid[i][j] = new Cell(i, j, 0)));
       }
     }
   }
@@ -58,8 +53,8 @@ export default class Gameboard {
     switch (direction) {
       case DIRECTION.down:
       case DIRECTION.right:
-        for (let i = this.cellCount - 1; i >= 0; i--) {
-          for (let j = this.cellCount - 1; j >= 0; j--) {
+        for (let i = config.tilesPerRow - 1; i >= 0; i--) {
+          for (let j = config.tilesPerRow - 1; j >= 0; j--) {
             func.call(this, this.grid[i][j], direction);
           }
         }
@@ -73,16 +68,6 @@ export default class Gameboard {
     }
   }
 
-  getCellFromCoords(x, y) {
-    return this.grid[Math.floor(x / this.cellSize)][
-      Math.floor(y / this.cellSize)
-    ];
-  }
-
-  toggleFlag(cell) {
-    cell.isFlagged = !cell.isFlagged;
-  }
-
   getCellNeighbour(cell, direction) {
     let neighbour = null;
     switch (direction) {
@@ -93,13 +78,13 @@ export default class Gameboard {
         break;
 
       case DIRECTION.right:
-        if (cell.posX < this.cellCount - 1) {
+        if (cell.posX < config.tilesPerRow - 1) {
           neighbour = this.grid[cell.posX + 1][cell.posY];
         }
         break;
 
       case DIRECTION.down:
-        if (cell.posY < this.cellCount - 1) {
+        if (cell.posY < config.tilesPerRow - 1) {
           neighbour = this.grid[cell.posX][cell.posY + 1];
         }
         break;
@@ -196,7 +181,10 @@ export default class Gameboard {
 
   draw() {
     this.drawMessage();
-    document.querySelector('body').appendChild(this.canvas);
+    var boardContainer = document.createElement('div');
+    boardContainer.classList.add('board-container');
+    boardContainer.appendChild(this.canvas);
+    document.querySelector('body').appendChild(boardContainer);
     this.clearCanvas();
 
     this.drawGrid();
